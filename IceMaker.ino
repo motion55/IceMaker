@@ -88,21 +88,61 @@ int NTC_Table[101] = {
   3661}
   ;
 
-int GetTemperatur()
-{
-  int Temp = NTC_Table[NTCTemperature/5];
-  if (Temp>analogRead(S1)&&NTCTemperature>0) {
-    NTCTemperature--;
-  } 
-  else if (Temp<analogRead(S1)&&NTCTemperature<500) {
-    NTCTemperature++;
-  }
-  return (NTCTemperature+2)/5;
-}
+int UP_State = LOW;
+int DN_State = LOW;
 
 void loop() {
+  yield();
+  if (digitalRead(UP_PB)==LOW) {
+    if (UP_State == HIGH) {
+      if (SetTemperature<50)
+        SetTemperature++;
+    }
+    UP_State = LOW;
+  } else {
+    UP_State = HIGH;    
+  }
+  if (digitalRead(DN_PB)==LOW) {
+    if (DN_State == HIGH) {
+      if (SetTemperature>-50)
+        SetTemperature--;
+    }
+    DN_State = LOW;
+  } else {
+    DN_State = HIGH;    
+  }
+  
+  lcd.setCursor(0,0);
+  lcd.print(F("Set Temp:"));
+  lcd.print(SetTemperature);
+  lcd.setCursor(0,1);
+  lcd.print(F("NTC Temp:"));
+  lcd.print(NTCTemperature);
+  
+  delay(50);
+}
+
+int NTC_index = 0;
+
+int GetTemperatur()
+{
+  int Temp = NTC_Table[NTC_index/5];
+  if (Temp>analogRead(S1)&&NTC_index>0) {
+    NTC_index--;
+  } 
+  else if (Temp<analogRead(S1)&&NTC_index<500) {
+    NTC_index++;
+  }
+  return ((NTC_index+2)/5)-50;
+}
+
+void yield(void)
+{
   unsigned long currentMillis = millis();
- if ((GetTemperatur()<SetTemperature)&&(ledState == LOW)) {
+  
+  NTCTemperature = GetTemperatur();
+  
+ if ((NTCTemperature<SetTemperature)&&(ledState == LOW)) {
     ledState = HIGH;
     previousMillis = currentMillis;
   }
